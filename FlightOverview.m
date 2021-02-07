@@ -5,13 +5,17 @@
 clearvars;
 clc;
 close all;
-flog = LoadLog( '14_35_57.ulg' );
+flog = LoadLog( '16_49_41.ulg' );
 timeFormat = 'mm:ss.SS';
 
 %% Get data
 att   = flog.vehicle_attitude;
 attSp = flog.vehicle_attitude_setpoint;
 act   = flog.actuator_outputs;
+pos   = flog.vehicle_local_position;
+if isfield( flog, 'vehicle_local_position_setpoint' )
+    posSp = flog.vehicle_local_position_setpoint;
+end
 
 %% Plot attitude
 % Get Euler angles
@@ -25,6 +29,42 @@ for ii = 1:length(axs)
     plot( att.timestamp, att.eul(:,ii) )
     plot( attSp.timestamp, attSp.eul(:,ii) )
     ylabel( [ axs{ii} ' (deg)' ] )
+    xtickformat( timeFormat )
+end
+
+% Extra info on bottom plot
+xlabel( 'Time from boot (mm:ss)' )
+legend( {'Estimated', 'Setpoint'}, 'location', 'best' )
+
+%% Plot position/velocity
+% Handle cases where no position setpoints have been given
+if ~exist( 'posSp' )
+    posSp = pos;
+    for ii = 1:size( posSp, 2 )
+        posSp{:,ii} = nan( size(posSp{:,ii}) );
+    end
+end
+
+figure( 'name', 'Position' )
+axs = { 'North, x', 'East, y', 'Down, z' };
+for ii = 1:length(axs)
+    subplot( 3, 1, ii ); hold on; grid on; box on;
+    plot( pos.timestamp, pos{:,3+ii} )
+    plot( posSp.timestamp, posSp{:,ii} )
+    ylabel( [ axs{ii} ' (m)' ] )
+    xtickformat( timeFormat )
+end
+
+% Extra info on bottom plot
+xlabel( 'Time from boot (mm:ss)' )
+legend( {'Estimated', 'Setpoint'}, 'location', 'best' )
+
+figure( 'name', 'Velocity' )
+for ii = 1:length(axs)
+    subplot( 3, 1, ii ); hold on; grid on; box on;
+    plot( pos.timestamp, pos{:,8+ii} )
+    plot( posSp.timestamp, posSp{:,5+ii} )
+    ylabel( [ axs{ii} ' vel (m/s)' ] )
     xtickformat( timeFormat )
 end
 
