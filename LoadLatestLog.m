@@ -8,6 +8,7 @@ function [flog, ulog] = LoadLatestLog( dirIn )
     
     %% Get latest file name
     folders = dir( dirIn );
+    folders = folders( [folders.isdir], : );
     files = dir( fullfile( dirIn, folders(end).name ) );
     
     %% Load latest file
