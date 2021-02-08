@@ -1,6 +1,15 @@
 function [ varargout ] = QuatToEuler( quat )
 %QUATTOEULER Convert quaternion to euler angles (roll, pitch, yaw)
 %   Based on PX4 Firmware code
+%   Input:
+%       - quat: Either 4x1/1x4 quaternion, or Mx4 matrix of M quaternion
+%   Outputs (all values in radians):
+%       Either:
+%           - eul: Either 3x1/1x3 euler angles, or Mx3 matrix of M angles
+%       Or:
+%           - roll:  Mx1 vector of roll angles
+%           - pitch: Mx1 vector of pitch angles
+%           - yaw:   Mx1 vector of yaw angles
 %   Written by: J.X.J. Bannwarth, 07/08/2017
     
     nout = max(nargout,1);
