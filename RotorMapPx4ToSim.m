@@ -10,10 +10,6 @@ function px4 = RotorMapPx4ToSim( sim, nRotors )
         nRotors (1,1) double = size(sim, 2)
     end
     
-%     if nRotors == -1
-%         nRotors = 
-%     end
-    
     switch nRotors
         case 4
             px4 = sim( :, [1 4 2 3] );
