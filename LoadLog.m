@@ -1,5 +1,5 @@
 function [flog, ulog] = LoadLog( fileIn, dirIn )
-%LOADLOG
+%LOADLOG Load ulog file to structure of timetables
 %   Written: 2021/02/07, J.X.J. Bannwarth
     %% Arguments
     arguments
