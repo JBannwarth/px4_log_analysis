@@ -86,9 +86,6 @@ function ImportLogs( driveIn )
     fprintf( 'Detected %d new files\n', length(filesIn) )
 
     %% Transfer logs
-    % Exit if there is nothing to do
-
-
     % Create folder if necessary
     for ii = 1:length( foldersOut )
         if ~isfolder( foldersOut{ii} )
