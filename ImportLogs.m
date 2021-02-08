@@ -2,7 +2,7 @@ function ImportLogs( driveIn )
 %IMPORTLOGS Move logs from SD-card and rename them
 %   Output format:
 %       ./logs/yyyy-MM-dd/yyyy-MM-dd_HH-mm-ss_mode.ulg
-%   Written: 2021/02/07, J.X.J. Bannwarth
+%   Written: 2021/02/08, J.X.J. Bannwarth
     %% Input processing
     arguments
         driveIn (1,:) char = 'F:'
