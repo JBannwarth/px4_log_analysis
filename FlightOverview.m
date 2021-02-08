@@ -5,7 +5,7 @@
 clearvars;
 clc;
 close all;
-flog = LoadLog( '16_49_41.ulg' );
+flog = LoadLatestLog();
 timeFormat = 'mm:ss.SS';
 
 %% Get data
@@ -13,6 +13,7 @@ att   = flog.vehicle_attitude;
 attSp = flog.vehicle_attitude_setpoint;
 act   = flog.actuator_outputs;
 pos   = flog.vehicle_local_position;
+mode  = flog.vehicle_control_mode;
 if isfield( flog, 'vehicle_local_position_setpoint' )
     posSp = flog.vehicle_local_position_setpoint;
 end
@@ -53,6 +54,9 @@ for ii = 1:length(axs)
     plot( posSp.timestamp, posSp{:,ii} )
     ylabel( [ axs{ii} ' (m)' ] )
     xtickformat( timeFormat )
+    if ii == 3
+        set ( gca, 'ydir', 'reverse' )
+    end
 end
 
 % Extra info on bottom plot

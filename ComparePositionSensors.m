@@ -5,7 +5,7 @@
 clearvars;
 clc;
 close all;
-flog = LoadLog( '14_35_57.ulg' );
+flog = LoadLatestLog();
 timeFormat = 'mm:ss.SS';
 
 %% Get data
