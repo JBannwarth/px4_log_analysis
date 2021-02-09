@@ -35,7 +35,7 @@ end
 
 % Extra info on bottom plot
 xlabel( 'Time from boot (mm:ss)' )
-legend( {'Estimated', 'Setpoint'}, 'location', 'best' )
+legend( {'Estimated', 'Setpoint'}, 'AutoUpdate', 'off' )
 
 %% Plot position/velocity
 % Handle cases where no position setpoints have been given
@@ -61,7 +61,7 @@ end
 
 % Extra info on bottom plot
 xlabel( 'Time from boot (mm:ss)' )
-legend( {'Estimated', 'Setpoint'}, 'location', 'best' )
+legend( {'Estimated', 'Setpoint'}, 'AutoUpdate', 'off' )
 
 figure( 'name', 'Velocity' )
 for ii = 1:length(axs)
@@ -74,7 +74,7 @@ end
 
 % Extra info on bottom plot
 xlabel( 'Time from boot (mm:ss)' )
-legend( {'Estimated', 'Setpoint'}, 'location', 'best' )
+legend( {'Estimated', 'Setpoint'}, 'AutoUpdate', 'off' )
 
 %% Plot actuators
 % Get simulation ordering
@@ -99,7 +99,7 @@ xtickformat( timeFormat )
 xlabel( 'Time from boot (mm:ss)' )
 ylabel( 'PWM signal (us)' )
 legend( { '1-FR', '2-RF', '3-RB', '4-BR', '5-BL', '6-LB', '7-LF', '8-FL'}, ...
-    'location', 'best' )
+    'AutoUpdate', 'off' )
 
 figure( 'name', 'Actuator output diff (simulation ordering)' )
 hold on; grid on; box on;
@@ -117,4 +117,4 @@ xtickformat( timeFormat )
 xlabel( 'Time from boot (mm:ss)' )
 ylabel( '\Delta PWM from mean (us)' )
 legend( { '1-FR', '2-RF', '3-RB', '4-BR', '5-BL', '6-LB', '7-LF', '8-FL'}, ...
-    'location', 'best' )
+    'AutoUpdate', 'off' )
