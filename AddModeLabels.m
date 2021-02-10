@@ -7,11 +7,11 @@ function AddModeLabels( modes, inverted )
 %   Draws a colored line along with a label for each mode change. Lines are
 %   much easier to handle than shaded areas.
 %   Written: 2021/02/09, J.X.J. Bannwarth
-    %% Arguments
     arguments
         modes timetable
         inverted (1,1) logical = false
     end
+    
     %% Set-up
     % Recognised mode labels, corresponding fields, and color codes
     labels = { 'OFFB'; 'POS'; 'VEL'; 'ALT'; 'ATT'; 'RATES' };
