@@ -2,10 +2,16 @@
 %   Written: 2021/02/07, J.X.J. Bannwarth
 
 %% Set-up
-clearvars;
 clc;
 close all;
-flog = LoadLatestLog();
+clearvars -except flog ulog;
+
+% Only read-in data if it has not already been loaded
+if ~exist( 'flog', 'var' )
+    [flog, ulog] = LoadLatestLog();
+end
+
+% Formatting
 timeFormat = 'mm:ss.SS';
 xAxisLabel = 'Time from boot (mm:ss)';
 
