@@ -219,8 +219,9 @@ hold on; grid on; box on;
 stairs( manual.timestamp, manual.mode_slot )
 
 % Format
+xlim( [min(manual.timestamp) max(manual.timestamp)] )
+ylim( [min(double(manual.mode_slot))-0.5, max(double(manual.mode_slot))+0.5] )
 xtickformat( timeFormat )
 xlabel( xAxisLabel )
 ylabel( 'Mode slot (-)' )
 AddModeLabels( mode )
-axis tight
