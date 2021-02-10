@@ -1,7 +1,8 @@
 function AddModeLabels( modes, inverted )
 %ADDMODELABELS Add mode transition labels to plot
 %   Input:
-%       - modes: timetable of mode changes
+%       - modes:    timetable of mode changes
+%       - inverted: whether the y-axis is inverted or not
 %   Shows modes in the following order of precedence:
 %       - OFFB > POS > VEL > ALT > ATT > RATES
 %   Draws a colored line along with a label for each mode change. Lines are
@@ -75,6 +76,7 @@ function DrawTransitionLine( xLoc, color, label, inverted )
 %       - xLoc:  location on x-axis to put the mode transition line
 %       - color: color code or 3x1 array of normalized RGB values
 %       - label: label to put to the right of the mode transition line
+%       - inverted: whether the y-axis is inverted or not
 %   Written: 2021/02/10, J.X.J. Bannwarth
     arguments
         xLoc
