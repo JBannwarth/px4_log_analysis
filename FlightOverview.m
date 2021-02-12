@@ -58,7 +58,7 @@ axs = { 'Roll', 'Pitch', 'Yaw' };
 for ii = 1:length(axs)
     subplot( 3, 1, ii ); hold on; grid on; box on;
     plot( att.timestamp, rad2deg( att.([lower(axs{ii}) 'speed']) ) )
-    plot( attSp.timestamp, rad2deg( ratesSp.(lower(axs{ii})) ) )
+    plot( ratesSp.timestamp, rad2deg( ratesSp.(lower(axs{ii})) ) )
     
     % Format
     ylabel( [ axs{ii} ' rate (deg/s)' ] )
