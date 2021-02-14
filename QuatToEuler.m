@@ -1,5 +1,8 @@
 function [ varargout ] = QuatToEuler( quat )
 %QUATTOEULER Convert quaternion to euler angles (roll, pitch, yaw)
+%   [ EUL ] = QUATTOEULER( QUAT ) converts Mx4 quaternions to Mx3 Euler angles
+%   [ ROLL, PITCH, YAW ] = QUATTOEULER( QUAT ) converts Mx4 QUAT to M Euler angles
+%
 %   Based on PX4 Firmware code
 %   Input:
 %       - quat: Either 4x1/1x4 quaternion, or Mx4 matrix of M quaternion
@@ -10,6 +13,19 @@ function [ varargout ] = QuatToEuler( quat )
 %           - roll:  Mx1 vector of roll angles
 %           - pitch: Mx1 vector of pitch angles
 %           - yaw:   Mx1 vector of yaw angles
+%
+%   Roll, pitch, and yaw are defined using the following sequence from the
+%   world frame:
+%       1. Yaw rotation around the world z-axis
+%       2. Pitch rotation around the new body y-axis
+%       3. Roll rotation around the new body x-axis
+%   The quaternions used are Hamilton quaternions in the form
+%       q = [ cos(alpha)^2; sin(alpha)^2 * ax ],
+%   where ax = [ax1; ax2; ax3] represents the axis of rotation and alpha
+%   the rotation angle.
+%
+%   See also ROTORMAPPX4TOSIM.
+%
 %   Written by: J.X.J. Bannwarth, 07/08/2017
 
     nout = max(nargout,1);

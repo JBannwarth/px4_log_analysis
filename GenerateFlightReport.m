@@ -1,6 +1,16 @@
 function GenerateFlightReport( fileIn, dirIn )
 %GENERATEFLIGHTREPORT Create a report with key flight information for a log
+%   GENERATEFLIGHTREPORT( ) generates report for most recent file in 'logs'
+%   GENERATEFLIGHTREPORT( FILEIN ) generates report for FILEIN in 'logs'
+%   GENERATEFLIGHTREPORT( FILEIN, DIRIN ) generates report for FILEIN in DIRIN
+%
+%   Input:
+%       - fileIn: name of the flight log file to load
+%       - dirIn:  path of the root directory containing the flight logs
 %   By default load latest flight log
+%
+%   See also LOADLOG, FLIGHTOVERVIEW.
+%
 %   Written: 2021/02/10, J.X.J. Bannwarth
     arguments
         fileIn (1,:) char = ''

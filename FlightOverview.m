@@ -1,4 +1,15 @@
 %FLIGHTOVERVIEW Plot all important signals to give an overview of a flight
+%
+%   By default load the latest flight log. To plot other logs, call
+%       [flog, ulog] = LoadLog( LOGNAME )
+%   before running FLIGHTOVERVIEW.
+%
+%   Note that the north-east-down convention is used whenever applicable.
+%   The axes for down velocities and positions are swapped around to
+%   provide a more intuitive view of the system response.
+%
+%   See also LOADLOG, FLIGHTOVERVIEW, COMPAREPOSITIONSENSORS.
+%
 %   Written: 2021/02/07, J.X.J. Bannwarth
 
 %% Set-up

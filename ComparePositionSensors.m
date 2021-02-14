@@ -1,4 +1,12 @@
 %COMPAREPOSITIONSENSORS Compare mocap, LIDAR-lite, and optical flow
+%
+%   Note that the altitude reported by the motion capture (mocap) system
+%   will be dependent on the origin. In addition, the altitude reported by
+%   the LIDAR-lite and optical flow sensors is dependent on the location of
+%   those sensors and the user-set offset parameters in PX4 Firmware.
+%
+%   See also FLIGHTOVERVIEW, LOADLATESTLOG, LOADLOG.
+%
 %   Written: 2021/02/07, J.X.J. Bannwarth
 
 %% Set-up

@@ -1,13 +1,22 @@
 function ImportLogs( driveIn )
 %IMPORTLOGS Move logs from SD-card and rename them
+%   IMPORTLOGS( ) Imports logs from the 'F:' drive
+%   IMPORTLOGS( DRIVEIN ) Imports logs from DRIVEIN drive
+%
+%   Input:
+%       - driveIn: path to input directory
+%
 %   Output format:
 %       ./logs/yyyy-MM-dd/yyyy-MM-dd_HH-mm-ss_mode.ulg
+%
+%   See also ULOGREADER, FLIGHTOVERVIEW.
+%
 %   Written: 2021/02/08, J.X.J. Bannwarth
-    %% Input processing
     arguments
         driveIn (1,:) char = 'F:'
     end
     
+    %% Imput processing
     if ~exist( driveIn, 'dir' )
         error( 'Input drive %s does not exist', driveIn )
     end

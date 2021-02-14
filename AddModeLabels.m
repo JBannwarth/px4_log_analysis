@@ -1,5 +1,8 @@
 function AddModeLabels( modes, inverted )
 %ADDMODELABELS Add mode transition labels to plot
+%   ADDMODELABELS( MODES ) adds mode labels based on messages in MODES
+%   ADDMODELABELS( MODES, INVERTED ) adds labels and inverts their y-location
+%
 %   Input:
 %       - modes:    timetable of mode changes
 %       - inverted: whether the y-axis is inverted or not
@@ -7,6 +10,9 @@ function AddModeLabels( modes, inverted )
 %       - OFFB > POS > VEL > ALT > ATT > RATES
 %   Draws a colored line along with a label for each mode change. Lines are
 %   much easier to handle than shaded areas.
+%
+%   See also FLIGHTOVERVIEW.
+%
 %   Written: 2021/02/09, J.X.J. Bannwarth
     arguments
         modes timetable
@@ -72,11 +78,15 @@ end
 %% Helper function
 function DrawTransitionLine( xLoc, color, label, inverted )
 %DRAWTRANSITIONLINE Draw mode transition line with label
-%   Inputs:
-%       - xLoc:  location on x-axis to put the mode transition line
-%       - color: color code or 3x1 array of normalized RGB values
-%       - label: label to put to the right of the mode transition line
+%   DRAWTRANSITIONLINE( XLOC, COLOR, LABEL ) draws transition line with label
+%   DRAWTRANSITIONLINE( XLOC, COLOR, LABEL, INVERTED ) specifies y-axis inversion
+%
+%   Input:
+%       - xLoc:     location on x-axis to put the mode transition line
+%       - color:    color code or 3x1 array of normalized RGB values
+%       - label:    label to put to the right of the mode transition line
 %       - inverted: whether the y-axis is inverted or not
+%
 %   Written: 2021/02/10, J.X.J. Bannwarth
     arguments
         xLoc
