@@ -26,7 +26,7 @@ function [ varargout ] = QuatToEuler( quat )
 %
 %   See also ROTORMAPPX4TOSIM.
 %
-%   Written by: J.X.J. Bannwarth, 07/08/2017
+%   Written: 07/08/2017, J.X.J. Bannwarth
 
     nout = max(nargout,1);
     if ~( ( nout == 1 ) || ( nout == 3 ) )
