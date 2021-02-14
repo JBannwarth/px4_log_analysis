@@ -22,6 +22,21 @@ For example:
 FlightOverview
 ```
 
+Note that if you do not specify the subfolder when using `LoadLog`, the
+logs folder and its subfolders are searched for a matching file. Therefore,
+
+```matlab
+[flog, ulog] = LoadLog( fullfile( '2021-02-08', '2021-02-08_15-29-40_posctl.ulg' ) );
+```
+
+and
+
+```matlab
+[flog, ulog] = LoadLog( '2021-02-08_15-29-40_posctl.ulg' );
+```
+
+will yield the same results.
+
 ### Generating PDF report for a log
 
 Run `GenerateFlightReport` without any arguments for the most recent log.
