@@ -8,7 +8,7 @@
 %   The axes for down velocities and positions are swapped around to
 %   provide a more intuitive view of the system response.
 %
-%   See also LOADLOG, FLIGHTOVERVIEW, COMPAREPOSITIONSENSORS.
+%   See also LOADLOG, LOADLATESTLOG, COMPAREPOSITIONSENSORS.
 %
 %   Written: 2021/02/07, J.X.J. Bannwarth
 
