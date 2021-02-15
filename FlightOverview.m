@@ -209,8 +209,9 @@ xlabel( xAxisLabel )
 ylabel( 'Normalised RC input (-)' )
 legend( {'1-roll', '2-pitch', '3-throttle', '4-yaw', '5-mode'}, ...
     'AutoUpdate', 'off', 'Location', 'best' )
+xlim( [min(rcIn.timestamp), max(rcIn.timestamp)] )
+ylim( [-1.1 1.1] )
 AddModeLabels( mode )
-axis tight
 
 %% Plot manual control setpoints
 % Redundant with RC channels but can be useful for debugging
@@ -227,6 +228,8 @@ xlabel( xAxisLabel )
 ylabel( 'Normalised manual control (-)' )
 legend( {'pitch stick', 'roll stick', 'throttle stick', 'yaw stick'}, ...
     'AutoUpdate', 'off', 'Location', 'best' )
+xlim( [min(manual.timestamp), max(manual.timestamp)] )
+ylim( [-1.1 1.1] )
 AddModeLabels( mode )
 axis tight
 
