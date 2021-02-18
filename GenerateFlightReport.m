@@ -29,6 +29,9 @@ function GenerateFlightReport( fileIn, dirIn )
     %% Set-up the report
     import mlreportgen.report.*
     import mlreportgen.dom.*
+    if ~isfolder( 'reports' )
+        mkdir( 'reports' )
+    end
     report = Report( fullfile( 'reports', fileName ) ,'pdf');
 
     %% Title page
@@ -84,9 +87,6 @@ function GenerateFlightReport( fileIn, dirIn )
     append( report, appendix )
 
     %% Publish report
-    if ~exist( 'reports', 'dir' )
-        mkdir( 'reports' )
-    end
     close( report )
     rptview( report )
 end
