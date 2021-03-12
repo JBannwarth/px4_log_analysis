@@ -35,6 +35,7 @@ pos     = flog.vehicle_local_position;
 mode    = flog.vehicle_control_mode;
 rcIn    = flog.rc_channels;
 manual  = flog.manual_control_setpoint;
+battery = flog.battery_status;
 if isfield( flog, 'vehicle_local_position_setpoint' )
     posSp = flog.vehicle_local_position_setpoint;
 end
@@ -245,3 +246,56 @@ xtickformat( timeFormat )
 xlabel( xAxisLabel )
 ylabel( 'Mode slot (-)' )
 AddModeLabels( mode )
+
+%% Plot battery
+figure( 'name', 'Battery status' )
+axBattery = ones(1, 3);
+
+% Voltage
+axBattery(1) = subplot( 3, 1, 1 );
+hold on; grid on; box on
+stairs( battery.timestamp, battery.voltage_v );
+
+% Format
+ylabel( 'Battery voltage (V)' )
+xtickformat( timeFormat )
+xlim( [min(battery.timestamp), max(battery.timestamp)] )
+AddModeLabels( mode )
+axis tight
+
+% Current and discharged current
+axBattery(2) = subplot( 3, 1, 2 );
+hold on; grid on; box on;
+
+% Current
+yyaxis left
+stairs( battery.timestamp, battery.current_a );
+ylabel( 'Current drawn (A)' )
+
+% Energy discharged
+yyaxis right
+stairs( battery.timestamp, battery.discharged_mah./1000 )
+ylabel( 'Energy discharged (Ah)' )
+
+% Format
+xtickformat( timeFormat )
+xlim( [min(battery.timestamp), max(battery.timestamp)] )
+AddModeLabels( mode )
+axis tight
+
+% Remaning battery
+axBattery(3) = subplot( 3, 1, 3 );
+hold on; grid on; box on
+stairs( battery.timestamp, battery.remaining.*100 );
+
+% Format
+xlabel( xAxisLabel )
+ylabel( 'Battery remaining (%)' )
+xtickformat( timeFormat )
+xlim( [min(battery.timestamp), max(battery.timestamp)] )
+ylim( [-5, 105] )
+AddModeLabels( mode )
+axis tight
+
+% Link axes
+linkaxes( axBattery ,'x' );
