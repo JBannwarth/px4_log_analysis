@@ -13,6 +13,7 @@ if ~exist( 'filePattern', 'var' )
 end
 
 dirIn = 'logs';
+flightLen = 150; % seconds
 
 %% Load files if needed
 if ~exist( 'flog', 'var') || ~exist( 'ulog', 'var' )
@@ -35,12 +36,37 @@ att   = cell( length(flog), 1 );
 attSp = cell( length(flog), 1 );
 mode  = cell( length(flog), 1 );
 for ii = 1:length( flog )
+    % Get important data
+    mode{ii}  = flog{ii}.vehicle_control_mode;
     pos{ii}   = flog{ii}.vehicle_local_position;
     posSp{ii} = flog{ii}.vehicle_local_position_setpoint;
     att{ii}   = flog{ii}.vehicle_attitude;
     attSp{ii} = flog{ii}.vehicle_attitude_setpoint;
-    mode{ii}  = flog{ii}.vehicle_control_mode;
     
+    % Find exit from offboard mode
+    idxEnd = find( mode{ii}.flag_control_offboard_enabled, 1, 'last' );
+    tEnd = mode{ii}.timestamp( idxEnd );
+    tStart = tEnd - seconds(flightLen);
+    
+    % Extract the range of data we care about
+    mode{ii}  = mode{ii}(  mode{ii}.timestamp  <= tEnd & mode{ii}.timestamp  >= tStart, : );
+    pos{ii}   = pos{ii}(   pos{ii}.timestamp   <= tEnd & pos{ii}.timestamp   >= tStart, : );
+    posSp{ii} = posSp{ii}( posSp{ii}.timestamp <= tEnd & posSp{ii}.timestamp >= tStart, : );
+    att{ii}   = att{ii}(   att{ii}.timestamp   <= tEnd & att{ii}.timestamp   >= tStart, : );
+    attSp{ii} = attSp{ii}( attSp{ii}.timestamp <= tEnd & attSp{ii}.timestamp >= tStart, : );
+    
+    % Resample at 10 Hz, and round to nearest 1/10th of a second
+    dt = 1 / 10;
+    tResample = round(tStart/dt)*dt:seconds(dt):round(tEnd/dt)*dt;
+    TT = synchronize( pos{1}(:,4:6),  posSp{1}(:,1:3),  ...
+        tResample, 'linear' );
 end
 
 %% Plot data
+
+%% Helper functions
+function dt = GetDt( data )
+    meanDt = seconds( mean( diff(data.timestamp) ) ) ;
+    frequency = round( 1 / meanDt );
+    dt = 1 / frequency;
+end
