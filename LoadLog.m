@@ -25,7 +25,8 @@ function [flog, ulog] = LoadLog( fileIn, dirIn )
     % of the subfolders
     if ~isfile( fullfile( dirIn, fileIn ) )
         logs = dir( fullfile( dirIn, '**', '*.ulg' ) );
-        logIdx = find( strcmp( {logs.name}, fileIn ), 1 );
+        logIdx = find( strcmp( extractBefore( {logs.name}, '.ulg' ), ...
+            fileIn ), 1 );
         
         if isempty( logIdx )
             error( 'Input file ''%s'' not found', fileIn )
@@ -48,4 +49,7 @@ function [flog, ulog] = LoadLog( fileIn, dirIn )
             flog.(dataTmp(ii,:).TopicNames{1}) = dataTmp(ii,:).TopicMessages{1};
         end
     end
+    
+    % Add filename to structure
+    flog.filename = extractBefore( fileIn, '.ulg' );
 end
