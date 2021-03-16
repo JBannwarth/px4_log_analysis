@@ -36,10 +36,11 @@ function flogs = LoadLogGroup( fileTag, saveFile, dirIn )
         fileTag = { fileTag };
     end
     
-    %% Get files
+    % Get files
     files = cell( length(fileTag), 1 );
     flogs = cell( length(fileTag), 1 );
-    for ii = 1:length(fileTag)
+    for ii = 1:length(fileTag)    
+        %% Get files
         % Inform user
         fprintf( 'Loading files matching tag %s (%d/%d)\n', ...
             fileTag{ii}, ii, length(fileTag) );
@@ -90,6 +91,7 @@ function flogs = LoadLogGroup( fileTag, saveFile, dirIn )
         flogs{ii} = flogs{ii}( idxSorted );
     end
     
+    %% Process output
     % If we only have one tag, we do not need a cell array inside another
     % cell array
     if length( fileTag ) == 1
