@@ -96,7 +96,7 @@ function PlotMetrics3( metrics, fieldName, xLabel, groupLegend, useIdentifier )
     % Initialise table
     figure( 'name', [ varType ' ' varCat suffix ] )
     markers = 'op^dvh';
-    tiledlayout( 3, 1, 'TileSpacing', 'compact', 'Padding', 'tight' );
+    tiledlayout( 3, 1, 'TileSpacing', 'compact', 'Padding', 'compact' );
     
     % Plot each axis
     for ii = 1:length(axs)
