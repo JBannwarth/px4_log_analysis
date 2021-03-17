@@ -1,16 +1,21 @@
-function flogs = LoadLogGroup( fileTag, saveFile, dirIn )
+function flogs = LoadLogGroup( fileTag, saveFile, dirIn, flightLen, dt )
 %LOADLOGGROUP Load a group of log containing a given tag
 %   FLOGS = LOADLOGGROUP( FILETAG ) loads files matching FILETAG.
 %   FLOGS = LOADLOGGROUP( FILETAG, SAVEFILE ) saves output to disk.
 %   FLOGS = LOADLOGGROUP( FILETAG, SAVEFILE, DIRIN ) specifies the input dir.
 %
 %   Inputs:
-%       - fileTag:  Only files containing fileTag will be loaded. Can be a
-%                   string of chars, or a cell array of strings of chars.
-%       - dirIn:    Top-level directory containing logs, defaults to 'logs'.
-%       - saveFile: Save the outputs to a .mat file for faster loading.
+%       - fileTag:   Only files containing fileTag will be loaded. Can be a
+%                    string of chars, or a cell array of strings of chars.
+%       - dirIn:     Top-level directory containing logs, defaults to 'logs'.
+%       - saveFile:  Save the outputs to a .mat file for faster loading.
+%       - flightLen: Length of time-period to crop in seconds. It is
+%                    assumed that the cropped period ends when the
+%                    OFFBOARD flight mode is switched off for the last time
+%                    in the current flight log. Off by default (-1).
+%       - dt:        Sample time for log resampling. Off by default (-1).
 %   Outputs:
-%       - flogs:    Sorted cell array of flight log structures.
+%       - flogs:     Sorted cell array of flight log structures.
 %
 %   It is assumed that the filenames are in the format
 %       <DATE>_<LEADSTRING>_<FILETAG>_<FILEIDENTIFIER>.ulg
@@ -27,9 +32,11 @@ function flogs = LoadLogGroup( fileTag, saveFile, dirIn )
 %   Written: 2021/03/16, J.X.J. Bannwarth
 
     arguments
-        fileTag  (1,:)
-        saveFile (1,1) logical = false
-        dirIn    (1,:) char    = 'logs'
+        fileTag   (1,:)
+        saveFile  (1,1) logical = false
+        dirIn     (1,:) char    = 'logs'
+        flightLen (1,1) double  = -1     % seconds
+        dt        (1,1) double =  -1     % seconds
     end
     
     if ~iscell( fileTag )
@@ -92,6 +99,16 @@ function flogs = LoadLogGroup( fileTag, saveFile, dirIn )
     end
     
     %% Process output
+    % Crop/resample if needed
+    if (flightLen > 0) && (dt > 0)
+        fprintf( 'Cropping logs to %.0f s, and resampling at %.1f Hz\n', ...
+            flightLen, 1/dt );
+        flogs = CropLogGroup( flogs, flightLen, dt );
+    elseif flightLen > 0
+        fprintf( 'Cropping logs to %.0f s\n', flightLen );
+        flogs = CropLogGroup( flogs, flightLen );
+    end
+    
     % If we only have one tag, we do not need a cell array inside another
     % cell array
     if length( fileTag ) == 1
