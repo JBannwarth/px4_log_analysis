@@ -9,7 +9,7 @@ function CompareFlights( flogs, legendStr, xVals, xLabel )
 %       - flogs:     1-D cell array of flight logs. Note: flights are
 %                    assumed to be cropped as desired before being passed
 %                    to this function. In addition, they need to be
-%                    resampled for
+%                    resampled with matching timestamps.
 %       - legendStr: Cell array of strings describing each flight log.
 %       - xVals:     Array of values for the x-axis of the metric plots.
 %                    For example, if flogs contains flight results at
