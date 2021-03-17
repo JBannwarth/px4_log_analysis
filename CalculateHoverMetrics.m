@@ -1,15 +1,12 @@
-function metrics = CalculateHoverMetrics( flogs, flightLen )
+function metrics = CalculateHoverMetrics( flogs )
 %CALCULATEHOVERMETRICS Calculate hover performance metrics.
 %   METRICS = CALCULATEHOVERMETRICS( FLOGS ) calculates metrics for logs in FLOGS.
-%   METRICS = CALCULATEHOVERMETRICS( FLOGS, FLIGHTLEN ) specifies the length of flight to analyse in seconds.
 %
 %   Inputs:
 %       - flogs:     Individual flight log, cell array of flight log (i.e.
-%                    a group), or a cell array of groups.
-%       - flightLen: Length of time-period to analyse in seconds. It is
-%                    assumed that the analysis period ends when the
-%                    OFFBOARD flight mode is switched off for the last time
-%                    in the current flight log.
+%                    a group), or a cell array of groups. Note: the logs
+%                    are assumed to have been cropped and resampled prior
+%                    to being passed to this function.
 %   Outputs:
 %       - metrics:   Table of performance metrics for each log, with group
 %                    identifier and group categoricals.
@@ -20,12 +17,11 @@ function metrics = CalculateHoverMetrics( flogs, flightLen )
 
     arguments
         flogs
-        flightLen (1,1) double = 150 % seconds
     end
     
     %% Input processing
-    % Convert individual log and or standalone group into the same format as cell
-    % arrays of groups to simplify subsequent code
+    % Convert individual log and or standalone group into the same format
+    % as cell arrays of groups to simplify subsequent code
     if ~iscell(flogs)
         % Individual log
         flogs = {{flogs}};
@@ -72,43 +68,10 @@ function metrics = CalculateHoverMetrics( flogs, flightLen )
     for ii = 1:length( flogs )
         for jj = 1:length( flogs{ii} )
              % Get important data
-            mode  = flogs{ii}{jj}.vehicle_control_mode;
             pos   = flogs{ii}{jj}.vehicle_local_position;
             posSp = flogs{ii}{jj}.vehicle_local_position_setpoint;
             att   = flogs{ii}{jj}.vehicle_attitude;
             attSp = flogs{ii}{jj}.vehicle_attitude_setpoint;
-
-            % Select columns of interest
-            pos = pos(:, matches( pos.Properties.VariableNames, ...
-                { 'x', 'y', 'z', 'vx', 'vy', 'vz' } ) );
-            posSp = posSp(:, matches( posSp.Properties.VariableNames, ...
-                { 'x', 'y', 'z', 'vx', 'vy', 'vz' } ) );
-            att = att(:, matches( att.Properties.VariableNames, ...
-                { 'rollspeed', 'pitchspeed', 'yawspeed', 'q' } ) );
-            attSp = attSp(:, matches( attSp.Properties.VariableNames, ...
-                { 'roll_body', 'pitch_body', 'yaw_body', 'q_d' } ) );
-
-            % Add euler attitude
-            [ att.roll_body, att.pitch_body, att.yaw_body ] = QuatToEuler( att.q );
-
-            % Convert to degrees
-            axs = { 'roll_body', 'pitch_body', 'yaw_body' };
-            for kk = 1:length( axs )
-                attSp.(axs{kk}) = rad2deg( attSp.(axs{kk}) );
-                att.(axs{kk})   = rad2deg( att.(axs{kk}) );
-            end
-
-            % Find exit from offboard mode
-            idxEnd = find( mode.flag_control_offboard_enabled, 1, 'last' );
-            tEnd = mode.timestamp( idxEnd );
-            tStart = tEnd - seconds(flightLen);
-
-            % Extract the range of data we care about and resample
-            dt = 1 / 10;
-            pos   = CropTimetable( pos  , tStart, tEnd, dt );
-            posSp = CropTimetable( posSp, tStart, tEnd, dt );
-            att   = CropTimetable( att  , tStart, tEnd, dt );
-            attSp = CropTimetable( attSp, tStart, tEnd, dt );
 
             % Calculate position error
             posErr = [posSp.x posSp.y posSp.z] - [pos.x pos.y pos.z];
@@ -125,14 +88,19 @@ function metrics = CalculateHoverMetrics( flogs, flightLen )
             avgAtt = avgAtt(:,[3 2 1]); % Switch to [roll pitch yaw]
             
             % Fill table
-            metrics.group(idx)         = flogs{ii}{jj}.group;
-            metrics.identifier(idx)    = flogs{ii}{jj}.identifier(1:end-3);
+            if isIndividual
+                metrics.group(idx)     = 'NA';
+                metrics.identifier(idx)= 'NA';
+            else
+                metrics.group(idx)     = flogs{ii}{jj}.group;
+                metrics.identifier(idx)= flogs{ii}{jj}.identifier(1:end-3);
+            end
             metrics.avgPosErr(idx,:)   = mean( posErr, 1 );
             metrics.avgPosErrNorm(idx) = mean( posErrNorm );
             metrics.rmsPosErr(idx,:)   = rms( posErr, 1 );
             metrics.rmsPosErrNorm(idx) = rms( posErrNorm );
             metrics.maxPosErr(idx,:)   = max( abs(posErr), [], 1 );
-            metrics.maxPosNorm(idx)    = max( posErrNorm );
+            metrics.maxPosErrNorm(idx) = max( posErrNorm );
             metrics.avgAtt(idx,:)      = avgAtt;
             metrics.rmsAttErr(idx,:)   = rms( attErr, 1 );
             metrics.maxqDist(idx)      = rad2deg( max( qDist ) );
@@ -142,15 +110,5 @@ function metrics = CalculateHoverMetrics( flogs, flightLen )
             
             idx = idx+1;
         end
-    end
-    
-end
-
-%% Helper function
-function T = CropTimetable( T, tStart, tEnd, dt )
-    T = T( T.timestamp <= tEnd & T.timestamp >= tStart, : );
-    tResample = round(tStart/dt)*dt:seconds(dt):round(tEnd/dt)*dt;
-    T = retime( T, tResample, 'linear' );
-    T.timestamp = T.timestamp - T.timestamp(1);
-    T.t = seconds( T.timestamp );
+    end 
 end

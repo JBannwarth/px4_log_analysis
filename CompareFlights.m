@@ -1,17 +1,15 @@
-function CompareFlights( flogs, flightLen, legendStr, xVals, xLabel )
+function CompareFlights( flogs, legendStr, xVals, xLabel )
 %COMPAREFLIGHTS Compare response and metrics for several flights.
 %   COMPAREFLIGHTS( FLOGS ) compares the flight logs contained in FLOGS.
-%   COMPAREFLIGHTS( FLOGS, FLIGHTLEN ) specifies the length of the flight in seconds.
-%   COMPAREFLIGHTS( FLOGS, FLIGHTLEN, LEGENDSTR ) specifies the flight log legend.
-%   COMPAREFLIGHTS( FLOGS, FLIGHTLEN, LEGENDSTR, XVALS ) specifies the x-axis value for each log.
-%   COMPAREFLIGHTS( FLOGS, FLIGHTLEN, LEGENDSTR, XVALS, XLABEL ) specifies the x-axis label.
+%   COMPAREFLIGHTS( FLOGS, LEGENDSTR ) specifies the flight log legend.
+%   COMPAREFLIGHTS( FLOGS, LEGENDSTR, XVALS ) specifies the x-axis value for each log.
+%   COMPAREFLIGHTS( FLOGS, LEGENDSTR, XVALS, XLABEL ) specifies the x-axis label.
 %
 %   Inputs:
-%       - flogs:     1-D cell array of flight logs.
-%       - flightLen: Length of time-period to analyse in seconds. It is
-%                    assumed that the analysis period ends when the
-%                    OFFBOARD flight mode is switched off for the last time
-%                    in the current flight log.
+%       - flogs:     1-D cell array of flight logs. Note: flights are
+%                    assumed to be cropped as desired before being passed
+%                    to this function. In addition, they need to be
+%                    resampled for
 %       - legendStr: Cell array of strings describing each flight log.
 %       - xVals:     Array of values for the x-axis of the metric plots.
 %                    For example, if flogs contains flight results at
@@ -27,7 +25,6 @@ function CompareFlights( flogs, flightLen, legendStr, xVals, xLabel )
 
     arguments
         flogs           cell
-        flightLen (1,1) double  = 150 % seconds
         legendStr       cell    = {}
         xVals     (:,1) double  = nan
         xLabel    (1,:) char    = ''
@@ -62,24 +59,17 @@ function CompareFlights( flogs, flightLen, legendStr, xVals, xLabel )
     end
 
     %% Get information of interest
-    % Assign arrays
+    % Calculate metrics
+    metrics = CalculateHoverMetrics( flogs );
+    
+    % Assign arrays for time responses
     pos   = cell( nLog, 1 );
     posSp = cell( nLog, 1 );
     att   = cell( nLog, 1 );
     attSp = cell( nLog, 1 );
     mode  = cell( nLog, 1 );
-    meanPosErr = zeros( nLog, 3 );
-    meanAtt    = zeros( nLog, 3 );
-    rmsPosErr  = zeros( nLog, 3 );
-    rmsAttErr  = zeros( nLog, 3 );
-    maxPosErr  = zeros( nLog, 3 );
-    maxAttErr  = zeros( nLog, 3 );
-    maxPosNorm = zeros( nLog, 1 );
-    maxqDist   = zeros( nLog, 1 );
-    rmsPosNorm = zeros( nLog, 1 );
-    rmsqDist   = zeros( nLog, 1 );
 
-    % Process data
+    % Process timeseries data
     for ii = 1:nLog
         % Get important data
         mode{ii}  = flogs{ii}.vehicle_control_mode;
@@ -87,16 +77,6 @@ function CompareFlights( flogs, flightLen, legendStr, xVals, xLabel )
         posSp{ii} = flogs{ii}.vehicle_local_position_setpoint;
         att{ii}   = flogs{ii}.vehicle_attitude;
         attSp{ii} = flogs{ii}.vehicle_attitude_setpoint;
-
-        % Select columns of interest
-        pos{ii} = pos{ii}(:, matches( pos{ii}.Properties.VariableNames, ...
-            { 'x', 'y', 'z', 'vx', 'vy', 'vz' } ) );
-        posSp{ii} = posSp{ii}(:, matches( posSp{ii}.Properties.VariableNames, ...
-            { 'x', 'y', 'z', 'vx', 'vy', 'vz' } ) );
-        att{ii} = att{ii}(:, matches( att{ii}.Properties.VariableNames, ...
-            { 'rollspeed', 'pitchspeed', 'yawspeed', 'q' } ) );
-        attSp{ii} = attSp{ii}(:, matches( attSp{ii}.Properties.VariableNames, ...
-            { 'roll_body', 'pitch_body', 'yaw_body', 'q_d' } ) );
 
         % Add euler attitude
         [ att{ii}.roll_body, att{ii}.pitch_body, att{ii}.yaw_body ] = QuatToEuler( att{ii}.q );
@@ -107,45 +87,6 @@ function CompareFlights( flogs, flightLen, legendStr, xVals, xLabel )
             attSp{ii}.(axs{jj}) = rad2deg( attSp{ii}.(axs{jj}) );
             att{ii}.(axs{jj})   = rad2deg( att{ii}.(axs{jj}) );
         end
-
-        % Find exit from offboard mode
-        idxEnd = find( mode{ii}.flag_control_offboard_enabled, 1, 'last' );
-        tEnd = mode{ii}.timestamp( idxEnd );
-        tStart = tEnd - seconds(flightLen);
-
-        % Extract the range of data we care about and resample
-        dt = 1 / 10;
-        pos{ii}   = CropTimetable( pos{ii}  , tStart, tEnd, dt );
-        posSp{ii} = CropTimetable( posSp{ii}, tStart, tEnd, dt );
-        att{ii}   = CropTimetable( att{ii}  , tStart, tEnd, dt );
-        attSp{ii} = CropTimetable( attSp{ii}, tStart, tEnd, dt );
-
-        % Calculate position metrics
-        posErr = [posSp{ii}.x posSp{ii}.y posSp{ii}.z] - ...
-            [pos{ii}.x pos{ii}.y pos{ii}.z];
-        posErrNorm = sqrt( sum( posErr.^2, 2 ) );
-        meanPosErr(ii,:) = mean( posErr, 1 );
-
-        rmsPosErr(ii,:) = rms( posErr, 1 );
-        rmsPosNorm(ii)  = rms( posErrNorm );
-
-        maxPosErr(ii,:) = max( abs(posErr), [], 1 );
-        maxPosNorm(ii)  = max( posErrNorm );
-
-        % Calculate attitude metrics
-        q    = quaternion( att{ii}.q );
-        qDes = quaternion( attSp{ii}.q_d );
-        qErr = conj(q) .* qDes;
-
-        attErr = eulerd( qErr, 'ZYX', 'frame' );
-
-        meanAtt(ii,:) = eulerd( meanrot( q ), 'ZYX', 'frame' );
-
-        rmsAttErr(ii,:) = rms( attErr, 1 );
-        rmsqDist(ii)    = rad2deg( rms( dist( q, qDes ) ) );
-
-        maxAttErr(ii,:) = max( abs(attErr), [], 1 );
-        maxqDist(ii)    = rad2deg( max( dist( q, qDes ) ) );
     end
 
     %% Plot responses
@@ -192,9 +133,9 @@ function CompareFlights( flogs, flightLen, legendStr, xVals, xLabel )
     % Position
     nexttile; hold on; grid on; box on
     for ii = 1:3
-        plot( xVals, rmsPosErr(:,ii), lineStyles{ii} )
+        plot( xVals, metrics.rmsPosErr(:,ii), lineStyles{ii} )
     end
-    plot( xVals, rmsPosNorm, lineStyles{4} )
+    plot( xVals, metrics.rmsPosErrNorm, lineStyles{4} )
     ylabel( 'Position RMS error (m)' )
     legend( {'x', 'y', 'z', 'L2 norm' }, 'location', 'best' )
     if useIdentifier
@@ -204,9 +145,9 @@ function CompareFlights( flogs, flightLen, legendStr, xVals, xLabel )
     % Attitude
     nexttile; hold on; grid on; box on
     for ii = 1:3
-        plot( xVals, rmsAttErr(:,ii), lineStyles{ii} )
+        plot( xVals, metrics.rmsAttErr(:,ii), lineStyles{ii} )
     end
-    plot( xVals, rmsqDist, lineStyles{4} )
+    plot( xVals, metrics.rmsqDist, lineStyles{4} )
     xlabel( xLabel )
     ylabel( 'Attitude RMS error (deg)' )
     legend( {'Roll', 'Pitch', 'Yaw', 'Dist'}, 'location', 'best' )
@@ -222,9 +163,9 @@ function CompareFlights( flogs, flightLen, legendStr, xVals, xLabel )
     % Position
     nexttile; hold on; grid on; box on
     for ii = 1:3
-        plot( xVals, maxPosErr(:,ii), lineStyles{ii} )
+        plot( xVals, metrics.maxPosErr(:,ii), lineStyles{ii} )
     end
-    plot( xVals, maxPosNorm, lineStyles{4} )
+    plot( xVals, metrics.maxPosErrNorm, lineStyles{4} )
     ylabel( 'Maximum position error (m)' )
     legend( {'x', 'y', 'z', 'L2 norm' }, 'location', 'best' )
     if useIdentifier
@@ -234,9 +175,9 @@ function CompareFlights( flogs, flightLen, legendStr, xVals, xLabel )
     % Attitude
     nexttile; hold on; grid on; box on
     for ii = 1:3
-        plot( xVals, maxAttErr(:,ii), lineStyles{ii} )
+        plot( xVals, metrics.maxAttErr(:,ii), lineStyles{ii} )
     end
-    plot( xVals, maxqDist, lineStyles{4} )
+    plot( xVals, metrics.maxqDist, lineStyles{4} )
     xlabel( xLabel )
     ylabel( 'Maximum attitude error (deg)' )
     legend( {'Roll', 'Pitch', 'Yaw', 'Dist'}, 'location', 'best' )
@@ -252,10 +193,11 @@ function CompareFlights( flogs, flightLen, legendStr, xVals, xLabel )
     % Position
     nexttile; hold on; grid on; box on
     for ii = 1:3
-        plot( xVals, meanPosErr(:,ii), lineStyles{ii} )
+        plot( xVals, metrics.avgPosErr(:,ii), lineStyles{ii} )
     end
-    ylabel( 'Mean position (m)' )
-    legend( {'x', 'y', 'z'}, 'location', 'best' )
+    plot( xVals, metrics.avgPosErrNorm, lineStyles{4} )
+    ylabel( 'Mean position error (m)' )
+    legend( {'x', 'y', 'z', 'L2 norm'}, 'location', 'best' )
     if useIdentifier
         AddXTickLabels( legendStr )
     end
@@ -263,7 +205,7 @@ function CompareFlights( flogs, flightLen, legendStr, xVals, xLabel )
     % Attitude
     nexttile; hold on; grid on; box on
     for ii = 1:3
-        plot( xVals, meanAtt(:,ii), lineStyles{ii} )
+        plot( xVals, metrics.avgAtt(:,ii), lineStyles{ii} )
     end
     xlabel( xLabel )
     ylabel( 'Mean attitude (deg)' )
@@ -278,12 +220,4 @@ end
 function AddXTickLabels( labels )
     xticks( 1:length(labels) )
     xticklabels( labels )
-end
-
-function T = CropTimetable( T, tStart, tEnd, dt )
-    T = T( T.timestamp <= tEnd & T.timestamp >= tStart, : );
-    tResample = round(tStart/dt)*dt:seconds(dt):round(tEnd/dt)*dt;
-    T = retime( T, tResample, 'linear' );
-    T.timestamp = T.timestamp - T.timestamp(1);
-    T.t = seconds( T.timestamp );
 end
