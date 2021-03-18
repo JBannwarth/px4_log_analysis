@@ -9,23 +9,25 @@ function CompareGroups( flogs, options )
 %                    to this function. In addition, they need to be
 %                    resampled with matching timestamps.
 %       - options:   Name-value arguments. Available options:
-%           > xVals:  Array of values for the x-axis of the metric plots.
-%                     For example, if flogs contains flight results at
-%                     different wind speeds, xVals can contain the mean wind
-%                     speed for each log. By default, the x-axes of the
-%                     metrics plots show the log identifier.
-%           > xLabel: Description of the x-axis values. For example, in the
-%                     above example, 'Wind speed (m/s)' would be appropriate.
+%           > xVals:       Array of values for the x-axis of the metric
+%                          plots. For example, if flogs contains flight
+%                          results at different wind speeds, xVals can
+%                          contain the mean wind speed for each log. By
+%                          default, the x-axes of the metrics plots show
+%                          the log identifier.
+%           > xAxisLabel:  Description of the x-axis values. For example,
+%                          in the above example, 'Wind speed (m/s)' would
+%                          be appropriate.
 %           > groupLegend: Cell array of legends for each group.
 %
-%   See also COMPAREFLIGHTS.
+%   See also COMPAREFLIGHTS, CALCULATEHOVERMETRICS.
 %
 %   Written: 2021/03/17, J.X.J. Bannwarth
 
     arguments
         flogs                     cell
         options.xVals       (:,1) double  = nan
-        options.xLabel      (1,:) char    = ''
+        options.xAxisLabel  (1,:) char    = ''
         options.groupLegend       cell    = {}
     end
 
@@ -40,13 +42,13 @@ function CompareGroups( flogs, options )
     % Compute metrics
     metrics = CalculateHoverMetrics( flogs );
     
-    identifiers = string( unique( metrics.identifier ) );
+    xLabels = string( unique( metrics.xLabel ) );
     if useIdentifier
-        options.xVals = (1:length(identifiers))';
+        options.xVals = (1:length(xLabels))';
     end
 
     % Add x-values to table
-    metrics.xVal = options.xVals( metrics.identifier );
+    metrics.xVal = options.xVals( metrics.xLabel );
     
     % Legend and axes labels
     groups = string( unique( metrics.group ) );
@@ -60,21 +62,76 @@ function CompareGroups( flogs, options )
     
     %% Plot metrics
     % Position metrics
-    PlotMetrics3( metrics, 'rmsPosErr', options.xLabel, options.groupLegend, useIdentifier )
-    PlotMetrics3( metrics, 'maxPosErr', options.xLabel, options.groupLegend, useIdentifier )
+    PlotMetrics3( metrics, 'rmsPosErr', options.xAxisLabel, options.groupLegend, useIdentifier )
+    PlotMetrics3( metrics, 'maxPosErr', options.xAxisLabel, options.groupLegend, useIdentifier )
     
     % Attitude metrics
-    PlotMetrics3( metrics, 'rmsAttErr', options.xLabel, options.groupLegend, useIdentifier )
-    PlotMetrics3( metrics, 'maxAttErr', options.xLabel, options.groupLegend, useIdentifier )
-    PlotMetrics3( metrics, 'avgAtt', options.xLabel, options.groupLegend, useIdentifier )
-end
+    PlotMetrics3( metrics, 'rmsAttErr', options.xAxisLabel, options.groupLegend, useIdentifier )
+    PlotMetrics3( metrics, 'maxAttErr', options.xAxisLabel, options.groupLegend, useIdentifier )
+    PlotMetrics3( metrics, 'avgAtt'   , options.xAxisLabel, options.groupLegend, useIdentifier )
     
+    % PWM metrics
+    PlotPWM( metrics, options.xAxisLabel, options.groupLegend, useIdentifier )
+end
+
 %% Helper
-function PlotMetrics3( metrics, fieldName, xLabel, groupLegend, useIdentifier )
+function PlotPWM( metrics, xAxisLabel, groupLegend, useIdentifier )
+%PLOTPWM Plot PWM metrics
+    % Get group names and identifiers
+    groups = unique( metrics.group );
+    xLabels = string( unique( metrics.xLabel ) );
+    
+    figure( 'name', 'PWM metrics' )
+    markers = 'op^dvh';
+    tiledlayout( 4, 1, 'TileSpacing', 'compact', 'Padding', 'compact' );
+    
+    fieldNames = { 'avgPwm', 'rmsPwm', 'minPwm', 'maxPwm' };
+    labelNames = { 'Average', 'RMS' , 'Min', 'Max' };
+    
+    for ii = 1:length( fieldNames )
+        nexttile(ii); hold on; grid on;  box on
+        for jj = 1:length( groups )
+            vals = metrics(metrics.group==groups(jj),:).(fieldNames{ii});
+            switch fieldNames{ii}
+                case 'minPwm'
+                    vals = min( vals, [], 2 );
+                case 'maxPwm'
+                    vals = max( vals, [], 2 );
+                otherwise
+                    vals = mean( vals, 2 );
+            end
+            scatter( metrics(metrics.group==groups(jj),:).xVal, ...
+                vals, ...
+                markers(jj) )
+        end
+
+        % Start at zero to give a better scale of the results
+        if ~contains( fieldNames{ii}, 'rms' )
+            ylim( [1000 2000] )
+        end
+        
+        % Axis ticks and labels
+        % Get unit
+        idx = strcmp( metrics.Properties.VariableNames, fieldNames{ii} ) ;
+        ylabel( sprintf( '%s PWM (%s)', labelNames{ii}, ... 
+            metrics.Properties.VariableUnits{idx} ) )
+        if useIdentifier
+            xticks( 1:length(xLabels) )
+            xticklabels( xLabels )
+        end
+    end
+    
+    % Formatting
+    xlabel( xAxisLabel )
+    legend( groupLegend, 'location', 'best' )
+    linkaxes( [nexttile(1) nexttile(2) nexttile(3)], 'x' )
+end
+
+function PlotMetrics3( metrics, fieldName, xAxisLabel, groupLegend, useIdentifier )
 %PLOTMETRICS3 Plot a 3-axis group of metrics.
     % Get group names and identifiers
     groups = unique( metrics.group );
-    identifiers = string( unique( metrics.identifier ) );
+    xLabels = string( unique( metrics.xLabel ) );
     
     % Select axes labels and create figure title
     varType = fieldName(1:3);
@@ -120,13 +177,13 @@ function PlotMetrics3( metrics, fieldName, xLabel, groupLegend, useIdentifier )
         ylabel( sprintf( '%s %s %s (%s)', varType, axs{ii}, varCat, ...
             metrics.Properties.VariableUnits{idx} ) )
         if useIdentifier
-            xticks( 1:length(identifiers) )
-            xticklabels( identifiers )
+            xticks( 1:length(xLabels) )
+            xticklabels( xLabels )
         end
     end
     
     % Formatting
-    xlabel( xLabel )
+    xlabel( xAxisLabel )
     legend( groupLegend, 'location', 'best' )
     linkaxes( [nexttile(1) nexttile(2) nexttile(3)], 'x' )
 end
