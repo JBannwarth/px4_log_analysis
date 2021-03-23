@@ -26,7 +26,7 @@ function [flog, ulog] = LoadLog( fileIn, dirIn )
     if ~isfile( fullfile( dirIn, fileIn ) )
         logs = dir( fullfile( dirIn, '**', '*.ulg' ) );
         logIdx = find( strcmp( extractBefore( {logs.name}, '.ulg' ), ...
-            fileIn ), 1 );
+            replace( fileIn, '.ulg', '' ) ), 1 );
         
         if isempty( logIdx )
             error( 'Input file ''%s'' not found', fileIn )
