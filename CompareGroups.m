@@ -72,6 +72,25 @@ function CompareGroups( flogs, options )
     
     % PWM metrics
     PlotPWM( metrics, options.xAxisLabel, options.groupLegend, useIdentifier )
+    
+    % Hover thrust
+    figure( 'name', 'Hover thrust' )
+    tiledlayout( 1, 1, 'TileSpacing', 'compact', 'Padding', 'compact' );
+    nexttile(1); hold on; grid on; box on
+    markers = 'op^dvh';
+    for ii = 1:length( groups )
+        scatter( metrics(metrics.group==groups{ii},:).xVal, ...
+            metrics(metrics.group==groups{ii},:).avgThrust.*100, ...
+            markers(ii) )
+    end
+    xlabel( options.xAxisLabel )
+    ylabel( 'Mean hover throttle (\%)' )
+    ylim( [0 100] )
+    legend( options.groupLegend, 'location', 'best' )
+    if useIdentifier
+        xticks( 1:length(xLabels) )
+        xticklabels( xLabels )
+    end
 end
 
 %% Helper

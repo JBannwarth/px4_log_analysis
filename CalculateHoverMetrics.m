@@ -89,6 +89,7 @@ function metrics = CalculateHoverMetrics( flogs )
             att   = flogs{ii}{jj}.vehicle_attitude;
             attSp = flogs{ii}{jj}.vehicle_attitude_setpoint;
             act   = flogs{ii}{jj}.actuator_outputs;
+            ctrls = flogs{ii}{jj}.actuator_controls_0;
 
             % Calculate position error
             posErr = [posSp.x posSp.y posSp.z] - [pos.x pos.y pos.z];
@@ -107,6 +108,8 @@ function metrics = CalculateHoverMetrics( flogs )
             % Calculate actuator usage
             pwm = act.output(:,1:act.noutputs(1));
             
+            % Get hover throttle
+            thrust = ctrls.control(:,4);
             
             % Fill table
             % Sorting columns
@@ -140,6 +143,9 @@ function metrics = CalculateHoverMetrics( flogs )
             metrics.rmsPwm(idx,:)      = rms( pwm - mean( pwm, 1 ), 1 );
             metrics.minPwm(idx,:)      = min( pwm, [], 1 );
             metrics.maxPwm(idx,:)      = max( pwm, [], 1 );
+            
+            % Thrust column
+            metrics.avgThrust(idx,:)   = mean( thrust );
             
             % Extra columns
             metrics.fileName(idx)      = [flogs{ii}{jj}.filename '.ulg'];
