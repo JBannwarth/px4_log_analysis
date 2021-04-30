@@ -299,3 +299,50 @@ axis tight
 
 % Link axes
 linkaxes( axBattery ,'x' );
+
+%% Plot horizontal thrust debugging values
+if max( contains( fields(attSp), 'thrust_vec_1' ) )
+    figure( 'name', 'Controller debug' )
+    
+    % x
+    axController(1) = subplot( 3, 1, 1 );
+    hold on; grid on; box on
+    stairs( attSp.timestamp, attSp.thrust_vec_1(:,1) )
+    stairs( attSp.timestamp, attSp.thrust_vec_2(:,1) )
+    stairs( attSp.timestamp, attSp.hor_thrust_2(:,1) )
+    ylabel( '$x$-axis thrust (-)' )
+    
+    % Format
+    legend( {'Baseline', 'H-inf', 'H-inf hor'}, ...
+        'AutoUpdate', 'off', 'Location', 'best' )
+    xtickformat( timeFormat )
+    AddModeLabels( mode )
+    axis tight
+    
+    % y
+    axController(2) = subplot( 3, 1, 2 );
+    hold on; grid on; box on
+    stairs( attSp.timestamp, attSp.thrust_vec_1(:,2) )
+    stairs( attSp.timestamp, attSp.thrust_vec_2(:,2) )
+    stairs( attSp.timestamp, attSp.hor_thrust_2(:,2) )
+    ylabel( '$y$-axis thrust (-)' )
+    
+    % Format
+    xtickformat( timeFormat )
+    AddModeLabels( mode )
+    axis tight
+    
+    % z
+    axController(3) = subplot( 3, 1, 3 );
+    hold on; grid on; box on
+    stairs( attSp.timestamp, attSp.thrust_vec_1(:,3) )
+    stairs( attSp.timestamp, attSp.thrust_vec_2(:,3) )
+    ylabel( '$z$-axis thrust (-)' )
+    
+    % Format
+    xtickformat( timeFormat )
+    ylim( [-1, 0] )
+    AddModeLabels( mode )
+    axis tight  
+    linkaxes( axController, 'x' )
+end
