@@ -39,6 +39,11 @@ battery = flog.battery_status;
 if isfield( flog, 'vehicle_local_position_setpoint' )
     posSp = flog.vehicle_local_position_setpoint;
 end
+if any( strcmp( attSp.Properties.VariableNames, 'controller_selected' ) )
+    ctrl = attSp(:, find(strcmp(fields(attSp), 'controller_selected')));
+else
+    ctrl = -1;
+end
 
 %% Plot attitude
 % Get Euler angles
@@ -56,7 +61,7 @@ for ii = 1:length(axs)
     % Format
     ylabel( [ axs{ii} ' (deg)' ] )
     xtickformat( timeFormat )
-    AddModeLabels( mode )
+    AddModeLabels( mode, false, ctrl )
     axis tight
 end
 
@@ -75,7 +80,7 @@ for ii = 1:length(axs)
     % Format
     ylabel( [ axs{ii} ' rate (deg/s)' ] )
     xtickformat( timeFormat )
-    AddModeLabels( mode )
+    AddModeLabels( mode, false, ctrl )
     axis tight
 end
 
@@ -105,9 +110,9 @@ for ii = 1:length(axs)
     xtickformat( timeFormat )
     if ii == 3
         set ( gca, 'ydir', 'reverse' )
-        AddModeLabels( mode, true)
+        AddModeLabels( mode, true, ctrl )
     else
-        AddModeLabels( mode )
+        AddModeLabels( mode, false, ctrl )
     end
     axis tight
 end
@@ -128,9 +133,9 @@ for ii = 1:length(axs)
     xtickformat( timeFormat )
     if ii == 3
         set ( gca, 'ydir', 'reverse' )
-        AddModeLabels( mode, true)
+        AddModeLabels( mode, true, ctrl )
     else
-        AddModeLabels( mode )
+        AddModeLabels( mode, false, ctrl )
     end
     axis tight
 end
@@ -174,7 +179,7 @@ xtickformat( timeFormat )
 xlabel( xAxisLabel )
 ylabel( 'PWM signal (us)' )
 legend( rotorLabels, 'AutoUpdate', 'off', 'Location', 'best' )
-AddModeLabels( mode )
+AddModeLabels( mode, false, ctrl )
 axis tight
 
 %% Plot difference from mean actuator output
@@ -195,7 +200,7 @@ xtickformat( timeFormat )
 xlabel( xAxisLabel )
 ylabel( '\Delta PWM from mean (us)' )
 legend( rotorLabels, 'AutoUpdate', 'off', 'Location', 'best' )
-AddModeLabels( mode )
+AddModeLabels( mode, false, ctrl )
 axis tight
 
 %% Plot RC channels
@@ -212,7 +217,7 @@ legend( {'1-roll', '2-pitch', '3-throttle', '4-yaw', '5-mode'}, ...
     'AutoUpdate', 'off', 'Location', 'best' )
 xlim( [min(rcIn.timestamp), max(rcIn.timestamp)] )
 ylim( [-1.1 1.1] )
-AddModeLabels( mode )
+AddModeLabels( mode, false, ctrl )
 
 %% Plot manual control setpoints
 % Redundant with RC channels but can be useful for debugging
@@ -231,7 +236,7 @@ legend( {'pitch stick', 'roll stick', 'throttle stick', 'yaw stick'}, ...
     'AutoUpdate', 'off', 'Location', 'best' )
 xlim( [min(manual.timestamp), max(manual.timestamp)] )
 ylim( [-1.1 1.1] )
-AddModeLabels( mode )
+AddModeLabels( mode, false, ctrl )
 axis tight
 
 % Mode slot - the mode selected depends on the drone configuration
@@ -245,7 +250,7 @@ ylim( [min(double(manual.mode_slot))-0.5, max(double(manual.mode_slot))+0.5] )
 xtickformat( timeFormat )
 xlabel( xAxisLabel )
 ylabel( 'Mode slot (-)' )
-AddModeLabels( mode )
+AddModeLabels( mode, false, ctrl )
 
 %% Plot battery
 figure( 'name', 'Battery status' )
@@ -260,7 +265,7 @@ stairs( battery.timestamp, battery.voltage_v );
 ylabel( 'Battery voltage (V)' )
 xtickformat( timeFormat )
 xlim( [min(battery.timestamp), max(battery.timestamp)] )
-AddModeLabels( mode )
+AddModeLabels( mode, false, ctrl )
 axis tight
 
 % Current and discharged current
@@ -280,7 +285,7 @@ ylabel( 'Energy discharged (Ah)' )
 % Format
 xtickformat( timeFormat )
 xlim( [min(battery.timestamp), max(battery.timestamp)] )
-AddModeLabels( mode )
+AddModeLabels( mode, false, ctrl )
 axis tight
 
 % Remaning battery
@@ -294,14 +299,14 @@ ylabel( 'Battery remaining (%)' )
 xtickformat( timeFormat )
 xlim( [min(battery.timestamp), max(battery.timestamp)] )
 ylim( [-5, 105] )
-AddModeLabels( mode )
+AddModeLabels( mode, false, ctrl )
 axis tight
 
 % Link axes
 linkaxes( axBattery ,'x' );
 
 %% Plot horizontal thrust debugging values
-if max( contains( fields(attSp), 'thrust_vec_1' ) )
+if any( contains( fields(attSp), 'thrust_vec_1' ) )
     figure( 'name', 'Controller debug' )
     
     % x
@@ -310,13 +315,13 @@ if max( contains( fields(attSp), 'thrust_vec_1' ) )
     stairs( attSp.timestamp, attSp.thrust_vec_1(:,1) )
     stairs( attSp.timestamp, attSp.thrust_vec_2(:,1) )
     stairs( attSp.timestamp, attSp.hor_thrust_2(:,1) )
-    ylabel( '$x$-axis thrust (-)' )
+    ylabel( 'x-axis thrust (-)' )
     
     % Format
     legend( {'Baseline', 'H-inf', 'H-inf hor'}, ...
         'AutoUpdate', 'off', 'Location', 'best' )
     xtickformat( timeFormat )
-    AddModeLabels( mode )
+    AddModeLabels( mode, false, ctrl )
     axis tight
     
     % y
@@ -325,11 +330,11 @@ if max( contains( fields(attSp), 'thrust_vec_1' ) )
     stairs( attSp.timestamp, attSp.thrust_vec_1(:,2) )
     stairs( attSp.timestamp, attSp.thrust_vec_2(:,2) )
     stairs( attSp.timestamp, attSp.hor_thrust_2(:,2) )
-    ylabel( '$y$-axis thrust (-)' )
+    ylabel( 'y-axis thrust (-)' )
     
     % Format
     xtickformat( timeFormat )
-    AddModeLabels( mode )
+    AddModeLabels( mode, false, ctrl )
     axis tight
     
     % z
@@ -337,12 +342,13 @@ if max( contains( fields(attSp), 'thrust_vec_1' ) )
     hold on; grid on; box on
     stairs( attSp.timestamp, attSp.thrust_vec_1(:,3) )
     stairs( attSp.timestamp, attSp.thrust_vec_2(:,3) )
-    ylabel( '$z$-axis thrust (-)' )
+    ylabel( 'z-axis thrust (-)' )
     
     % Format
+    xlabel( xAxisLabel )
     xtickformat( timeFormat )
     ylim( [-1, 0] )
-    AddModeLabels( mode )
+    AddModeLabels( mode, false, ctrl )
     axis tight  
     linkaxes( axController, 'x' )
 end

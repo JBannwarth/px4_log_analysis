@@ -1,7 +1,8 @@
-function AddModeLabels( modes, inverted )
+function AddModeLabels( modes, inverted, controller )
 %ADDMODELABELS Add mode transition labels to plot
 %   ADDMODELABELS( MODES ) adds mode labels based on messages in MODES
 %   ADDMODELABELS( MODES, INVERTED ) adds labels and inverts their y-location
+%   ADDMODELABELS( MODES, INVERTED, CONTROLLER ) also adds controller labels
 %
 %   Input:
 %       - modes:    timetable of mode changes
@@ -17,6 +18,7 @@ function AddModeLabels( modes, inverted )
     arguments
         modes timetable
         inverted (1,1) logical = false
+        controller = -1
     end
     
     %% Set-up
@@ -71,6 +73,25 @@ function AddModeLabels( modes, inverted )
                     break
                 end
             end
+        end
+    end
+    
+    %% Draw controller labels
+    if ( istimetable( controller ) && ...
+            any( strcmp( controller.Properties.VariableNames, 'controller_selected' )) )
+        % Find controller changes
+        ctrlOnIdx  = find( diff(controller.controller_selected) ==  1 ) + 1;
+        ctrlOffIdx = find( diff(controller.controller_selected) == -1 ) + 1;
+        
+        % Draw all mode changes
+        for ii = 1:length(ctrlOnIdx)
+            DrawTransitionLine( controller.timestamp(ctrlOnIdx(ii)), ...
+                'k', 'H-INF', inverted );
+        end
+        
+        for jj = 1:length(ctrlOffIdx)
+            DrawTransitionLine( controller.timestamp(ctrlOffIdx(jj)), ...
+                'k', 'PX4', inverted );
         end
     end
 end
