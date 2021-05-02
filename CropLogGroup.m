@@ -1,19 +1,21 @@
-function flogsOut = CropLogGroup( flogsIn, flightLen, dt )
+function flogsOut = CropLogGroup( flogsIn, flightLen, dt, signal )
 %CROPLOGGROUP Crop a group of logs.
-%   FLOGSOUT = CROPLOGGROUP( FLOGSIN, FLIGHTLEN ) crops logs to the last 150s of OFFBOARD mode.
+%   FLOGSOUT = CROPLOGGROUP( FLOGSIN ) crops logs to the last 150s of OFFBOARD mode.
 %   FLOGSOUT = CROPLOGGROUP( FLOGSIN, FLIGHTLEN ) specifies the flight length to crop.
 %   FLOGSOUT = CROPLOGGROUP( FLOGSIN, FLIGHTLEN, DT ) also resamples the data with sampling time DT.
+%   FLOGSOUT = CROPLOGGROUP( FLOGSIN, FLIGHTLEN, DT, SIGNAL ) specifies the signal which change demarkates the end of the log
 %
 %   Inputs:
 %       - flogsIn:   Individual flight log, cell array of flight log (i.e.
 %                    a group), or a cell array of groups.
-%       - flightLen: Length of time-period to crop in seconds. It is
-%                    assumed that the cropped period ends when the
-%                    OFFBOARD flight mode is switched off for the last time
-%                    in the current flight log.
+%       - flightLen: Length of time-period to crop in seconds. 150s by
+%                    default, can be turned off by setting to -1.
 %       - dt:        Sample time for log resampling. Off by default (-1).
+%       - signal:    2x1 cell array defining the topic and signal name that
+%                    contains the state change demarkating the end of the
+%                    test period.
 %   Output:
-%       - flogsOut:  Cropped flight log(s).
+%       - signal:  Cropped flight log(s).
 %
 %   See also LOADLOGGROUP.
 %
@@ -22,7 +24,8 @@ function flogsOut = CropLogGroup( flogsIn, flightLen, dt )
     arguments
         flogsIn
         flightLen (1,1) double = 150 % seconds
-        dt        (1,1) double =  -1 % seconds
+        dt        (1,1) double = -1  % seconds
+        signal    (2,1) cell   =  {'vehicle_control_mode', 'flag_control_offboard_enabled'}
     end
 
     %% Input processing
@@ -45,14 +48,35 @@ function flogsOut = CropLogGroup( flogsIn, flightLen, dt )
     flogsOut = flogsIn;
     for ii = 1:length( flogsIn )
         for jj = 1:length( flogsIn{ii} )
-            % Find exit from offboard mode
-            mode = flogsIn{ii}{jj}.vehicle_control_mode;
-            idxEnd = find( mode.flag_control_offboard_enabled, 1, 'last' );
-            tEnd = mode.timestamp( idxEnd );
-            tStart = tEnd - seconds(flightLen);
+            mode = flogsIn{ii}{jj}.(signal{1});
+            if flightLen > 0
+                % Find last mode change (when the signal last experiences a
+                % large change
+                threshold = min(mode.(signal{2})) + ...
+                    0.5*( max(mode.(signal{2})) - min(mode.(signal{2})) );
+                idxEnd = find( diff( mode.(signal{2}) > threshold ), ...
+                    1, 'last' );
+                tEnd = mode.timestamp( idxEnd );
+                tStart = tEnd - seconds(flightLen);
+            else
+                % Use the earliest and latest times that are present in
+                % all topics
+                tStart = -inf;
+                tEnd = inf;
+                fieldNames = fields( flogsIn{ii}{jj} );
+                for kk = 1:length( fieldNames )
+                    if istimetable( flogsIn{ii}{jj}.(fieldNames{kk}) )
+                        tStart = max( [ tStart, ...
+                            flogsIn{ii}{jj}.(fieldNames{kk}).timestamp(1) ] );
+                        tEnd = min( [ tEnd, ...
+                            flogsIn{ii}{jj}.(fieldNames{kk}).timestamp(end) ] );
+                    end
+                end
+            end
+            
             if dt > 0
                 % Use round timestamps
-                tResample = (round(tStart/dt)*dt:seconds(dt):round(tEnd/dt)*dt)';
+                tResample = (ceil(tStart/dt)*dt:seconds(dt):floor(tEnd/dt)*dt)';
             end
             
             % Crop log and resample if necessary
@@ -84,7 +108,7 @@ function flogsOut = CropLogGroup( flogsIn, flightLen, dt )
                             % resampled timestamp
                             idx = zeros( size( tResample ) );
                             for nn = 1:length( tResample )
-                                idx(nn) = find( t < tResample(nn), 1, 'last' );
+                                idx(nn) = find( t <= tResample(nn), 1, 'last' );
                             end
 
                             % Find how far along the resampled timestamp is

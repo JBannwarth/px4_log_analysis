@@ -1,8 +1,12 @@
-function flogs = LoadLogGroup( fileTag, saveFile, dirIn, flightLen, dt )
+function flogs = LoadLogGroup( fileTag, saveFile, dirIn, flightLen, dt, signal )
 %LOADLOGGROUP Load a group of log containing a given tag
 %   FLOGS = LOADLOGGROUP( FILETAG ) loads files matching FILETAG.
 %   FLOGS = LOADLOGGROUP( FILETAG, SAVEFILE ) saves output to disk.
 %   FLOGS = LOADLOGGROUP( FILETAG, SAVEFILE, DIRIN ) specifies the input dir.
+%   FLOGS = LOADLOGGROUP( FILETAG, SAVEFILE, DIRIN, FLIGHTLEN ) specifies the length to crop
+%   FLOGS = LOADLOGGROUP( FILETAG, SAVEFILE, DIRIN, FLIGHTLEN, DT ) specifies the resampling rate
+%   FLOGS = LOADLOGGROUP( FILETAG, SAVEFILE, DIRIN, FLIGHTLEN, DT, ) specifies the resampling rate
+%   FLOGS = LOADLOGGROUP( FILETAG, SAVEFILE, DIRIN, FLIGHTLEN, DT, SIGNAL ) specifies the signal to use for cropping
 %
 %   Inputs:
 %       - fileTag:   Only files containing fileTag will be loaded. Can be a
@@ -14,6 +18,9 @@ function flogs = LoadLogGroup( fileTag, saveFile, dirIn, flightLen, dt )
 %                    OFFBOARD flight mode is switched off for the last time
 %                    in the current flight log. Off by default (-1).
 %       - dt:        Sample time for log resampling. Off by default (-1).
+%       - signal:    2x1 cell array defining the topic and signal name that
+%                    contains the state change demarkating the end of the
+%                    test period.
 %   Outputs:
 %       - flogs:     Sorted cell array of flight log structures.
 %
@@ -36,7 +43,8 @@ function flogs = LoadLogGroup( fileTag, saveFile, dirIn, flightLen, dt )
         saveFile  (1,1) logical = false
         dirIn     (1,:) char    = 'logs'
         flightLen (1,1) double  = -1     % seconds
-        dt        (1,1) double =  -1     % seconds
+        dt        (1,1) double  = -1     % seconds
+        signal    (2,1) cell    = {'vehicle_control_mode', 'flag_control_offboard_enabled'}
     end
     
     if ~iscell( fileTag )
@@ -103,10 +111,13 @@ function flogs = LoadLogGroup( fileTag, saveFile, dirIn, flightLen, dt )
     if (flightLen > 0) && (dt > 0)
         fprintf( 'Cropping logs to %.0f s, and resampling at %.1f Hz\n', ...
             flightLen, 1/dt );
-        flogs = CropLogGroup( flogs, flightLen, dt );
+        flogs = CropLogGroup( flogs, flightLen, dt, signal );
     elseif flightLen > 0
         fprintf( 'Cropping logs to %.0f s\n', flightLen );
-        flogs = CropLogGroup( flogs, flightLen );
+        flogs = CropLogGroup( flogs, flightLen, -1, signal );
+    elseif dt > 0
+        fprintf( 'Resampling at %.1f Hz\n', 1/dt );
+        flogs = CropLogGroup( flogs, -1, dt, signal );
     end
     
     % If we only have one tag, we do not need a cell array inside another

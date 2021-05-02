@@ -68,6 +68,7 @@ function CompareFlights( flogs, legendStr, xVals, xLabel )
     att   = cell( nLog, 1 );
     attSp = cell( nLog, 1 );
     mode  = cell( nLog, 1 );
+    act   = cell( nLog, 1 );
 
     % Process timeseries data
     for ii = 1:nLog
@@ -77,6 +78,7 @@ function CompareFlights( flogs, legendStr, xVals, xLabel )
         posSp{ii} = flogs{ii}.vehicle_local_position_setpoint;
         att{ii}   = flogs{ii}.vehicle_attitude;
         attSp{ii} = flogs{ii}.vehicle_attitude_setpoint;
+        act{ii}   = flogs{ii}.actuator_outputs;
 
         % Add euler attitude
         [ att{ii}.roll_body, att{ii}.pitch_body, att{ii}.yaw_body ] = QuatToEuler( att{ii}.q );
@@ -87,6 +89,10 @@ function CompareFlights( flogs, legendStr, xVals, xLabel )
             attSp{ii}.(axs{jj}) = rad2deg( attSp{ii}.(axs{jj}) );
             att{ii}.(axs{jj})   = rad2deg( att{ii}.(axs{jj}) );
         end
+        
+        % Remove empty controller output columns
+        toKeep = 1:flogs{ii}.actuator_outputs.noutputs(1);
+        flogs{ii}.actuator_outputs.output = flogs{ii}.actuator_outputs.output(:,toKeep);
     end
 
     %% Plot responses
@@ -121,6 +127,25 @@ function CompareFlights( flogs, legendStr, xVals, xLabel )
     xlabel( 'Time (s)' );
     legend( legendStr )
     linkaxes( [nexttile(1) nexttile(2) nexttile(3)], 'x' )
+    
+    % Actuator usage
+    figure( 'name', 'Actuator usage' )
+    tiledlayout( 8, 1, 'TileSpacing', 'compact', 'Padding', 'tight' );
+    nOutput = act{1}.noutputs(1);
+    axH = zeros(nOutput,1);
+    for ii = 1:nLog
+        for jj = 1:nOutput
+            nexttile( jj ); hold on; grid on; box on
+            plot( act{ii}.t, act{ii}.output(:,jj) )
+            ylabel( sprintf('M%d out (\\mu s)', jj ) )
+            if ii == 1
+                axH(jj) = nexttile(jj);
+            end
+        end
+    end
+    xlabel( 'Time (s)' );
+    legend( legendStr )
+    linkaxes( axH, 'x' )
 
     %% Plot metrics
     % Format settings
@@ -128,7 +153,7 @@ function CompareFlights( flogs, legendStr, xVals, xLabel )
 
     % RMS metrics
     figure( 'name', 'RMS error' )
-    tiledlayout( 2, 1, 'TileSpacing', 'compact', 'Padding', 'tight' );
+    tiledlayout( 3, 1, 'TileSpacing', 'compact', 'Padding', 'tight' );
 
     % Position
     nexttile; hold on; grid on; box on
@@ -136,6 +161,7 @@ function CompareFlights( flogs, legendStr, xVals, xLabel )
         plot( xVals, metrics.rmsPosErr(:,ii), lineStyles{ii} )
     end
     plot( xVals, metrics.rmsPosErrNorm, lineStyles{4} )
+    ylim( [0, inf] )
     ylabel( 'Position RMS error (m)' )
     legend( {'x', 'y', 'z', 'L2 norm' }, 'location', 'best' )
     if useIdentifier
@@ -148,13 +174,25 @@ function CompareFlights( flogs, legendStr, xVals, xLabel )
         plot( xVals, metrics.rmsAttErr(:,ii), lineStyles{ii} )
     end
     plot( xVals, metrics.rmsqDist, lineStyles{4} )
-    xlabel( xLabel )
+    ylim( [0, inf] )
     ylabel( 'Attitude RMS error (deg)' )
     legend( {'Roll', 'Pitch', 'Yaw', 'Dist'}, 'location', 'best' )
-    linkaxes( [nexttile(1) nexttile(2)], 'x' )
     if useIdentifier
         AddXTickLabels( legendStr )
     end
+    
+    % Actuator usage
+    nexttile; hold on; grid on; box on
+    plot( xVals, mean(metrics.rmsPwm,2), lineStyles{1} )
+    ylabel( 'RMS act (\mu s)' )
+    ylim( [0, inf] )
+    if useIdentifier
+        AddXTickLabels( legendStr )
+    end
+    
+    % Labels
+    xlabel( xLabel )
+    linkaxes( [nexttile(1) nexttile(2) nexttile(3)], 'x' )
 
     % Maximum metrics
     figure( 'name', 'Max error' )
@@ -166,6 +204,7 @@ function CompareFlights( flogs, legendStr, xVals, xLabel )
         plot( xVals, metrics.maxPosErr(:,ii), lineStyles{ii} )
     end
     plot( xVals, metrics.maxPosErrNorm, lineStyles{4} )
+    ylim( [0, inf] )
     ylabel( 'Maximum position error (m)' )
     legend( {'x', 'y', 'z', 'L2 norm' }, 'location', 'best' )
     if useIdentifier
@@ -179,6 +218,7 @@ function CompareFlights( flogs, legendStr, xVals, xLabel )
     end
     plot( xVals, metrics.maxqDist, lineStyles{4} )
     xlabel( xLabel )
+    ylim( [0, inf] )
     ylabel( 'Maximum attitude error (deg)' )
     legend( {'Roll', 'Pitch', 'Yaw', 'Dist'}, 'location', 'best' )
     linkaxes( [nexttile(1) nexttile(2)], 'x' )
