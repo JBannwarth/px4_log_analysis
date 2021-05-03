@@ -129,6 +129,6 @@ function flogs = LoadLogGroup( fileTag, saveFile, dirIn, flightLen, dt, signal )
     % Save to disk if required
     if saveFile
         filename = input( 'Enter output file name: ', 's' );
-        save( filename, 'flogs' )
+        save( filename, 'flogs', '-v7.3' )
     end
 end
