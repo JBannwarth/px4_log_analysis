@@ -170,7 +170,7 @@ function PlotMetrics3( metrics, fieldName, xAxisLabel, groupLegend, useIdentifie
     end
     
     % Initialise table
-    figure( 'name', [ varType ' ' varCat suffix ] )
+    figure( 'name', [ varType ' ' suffix ] )
     markers = 'op^dvh';
     tiledlayout( 3, 1, 'TileSpacing', 'compact', 'Padding', 'compact' );
     
@@ -193,7 +193,7 @@ function PlotMetrics3( metrics, fieldName, xAxisLabel, groupLegend, useIdentifie
         % Axis ticks and labels
         % Get unit
         idx = strcmp( metrics.Properties.VariableNames, fieldName ) ;
-        ylabel( sprintf( '%s %s %s%s (%s)', varType, axs{ii}, varCat, ...
+        ylabel( sprintf( '%s %s %s (%s)', varType, axs{ii}, ...
             suffix, metrics.Properties.VariableUnits{idx} ) )
         if useIdentifier
             xticks( 1:length(xLabels) )

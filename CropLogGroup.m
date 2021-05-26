@@ -1,9 +1,10 @@
-function flogsOut = CropLogGroup( flogsIn, flightLen, dt, signal )
+function flogsOut = CropLogGroup( flogsIn, flightLen, dt, signal, tEndIn )
 %CROPLOGGROUP Crop a group of logs.
 %   FLOGSOUT = CROPLOGGROUP( FLOGSIN ) crops logs to the last 150s of OFFBOARD mode.
 %   FLOGSOUT = CROPLOGGROUP( FLOGSIN, FLIGHTLEN ) specifies the flight length to crop.
 %   FLOGSOUT = CROPLOGGROUP( FLOGSIN, FLIGHTLEN, DT ) also resamples the data with sampling time DT.
 %   FLOGSOUT = CROPLOGGROUP( FLOGSIN, FLIGHTLEN, DT, SIGNAL ) specifies the signal which change demarkates the end of the log
+%   FLOGSOUT = CROPLOGGROUP( FLOGSIN, FLIGHTLEN, DT, TENDIN ) overrides the crop time
 %
 %   Inputs:
 %       - flogsIn:   Individual flight log, cell array of flight log (i.e.
@@ -14,6 +15,9 @@ function flogsOut = CropLogGroup( flogsIn, flightLen, dt, signal )
 %       - signal:    2x1 cell array defining the topic and signal name that
 %                    contains the state change demarkating the end of the
 %                    test period.
+%       - tEndIn:    cell array of vectors with the same dimensions as
+%                    flogsIn, overriding the crop time detection. Elements
+%                    <=0 are not overriden.
 %   Output:
 %       - signal:  Cropped flight log(s).
 %
@@ -26,6 +30,7 @@ function flogsOut = CropLogGroup( flogsIn, flightLen, dt, signal )
         flightLen (1,1) double = 150 % seconds
         dt        (1,1) double = -1  % seconds
         signal    (2,1) cell   =  {'vehicle_control_mode', 'flag_control_offboard_enabled'}
+        tEndIn                 = {}
     end
 
     %% Input processing
@@ -44,6 +49,22 @@ function flogsOut = CropLogGroup( flogsIn, flightLen, dt, signal )
         type = 'groups';
     end
     
+    % Check tEnd
+    if isempty( tEndIn )
+        % Not used - set to an array of 0s the size of flogsIn to make
+        % subsequent code simpler
+        for ii = 1:length(flogsIn)
+            tEndIn{ii} = zeros( size( flogsIn{ii} ) );
+        end
+    else
+        % Check size
+        for ii = 1:length(flogsIn)
+            if ( length( tEndIn{ii} ) ~= length( flogsIn{ii} ) )
+                error( 'Size of tEnd does not match size of flogsIn' )
+            end
+        end
+    end
+    
     %% Crop logs
     flogsOut = flogsIn;
     for ii = 1:length( flogsIn )
@@ -52,11 +73,15 @@ function flogsOut = CropLogGroup( flogsIn, flightLen, dt, signal )
             if flightLen > 0
                 % Find last mode change (when the signal last experiences a
                 % large change
-                threshold = min(mode.(signal{2})) + ...
-                    0.5*( max(mode.(signal{2})) - min(mode.(signal{2})) );
-                idxEnd = find( diff( mode.(signal{2}) > threshold ), ...
-                    1, 'last' );
-                tEnd = mode.timestamp( idxEnd );
+                if tEndIn{ii}(jj) > 0
+                    tEnd = duration(seconds(tEndIn{ii}(jj)));
+                else
+                    threshold = min(mode.(signal{2})) + ...
+                        0.5*( max(mode.(signal{2})) - min(mode.(signal{2})) );
+                    idxEnd = find( diff( mode.(signal{2}) > threshold ), ...
+                        1, 'last' );
+                    tEnd = mode.timestamp( idxEnd );
+                end
                 tStart = tEnd - seconds(flightLen);
             else
                 % Use the earliest and latest times that are present in
@@ -108,7 +133,11 @@ function flogsOut = CropLogGroup( flogsIn, flightLen, dt, signal )
                             % resampled timestamp
                             idx = zeros( size( tResample ) );
                             for nn = 1:length( tResample )
-                                idx(nn) = find( t <= tResample(nn), 1, 'last' );
+                                try
+                                    idx(nn) = find( t <= tResample(nn), 1, 'last' );
+                                catch
+                                    error( 'Error at %s', flogsIn{ii}{jj}.filename )
+                                end
                             end
 
                             % Find how far along the resampled timestamp is
